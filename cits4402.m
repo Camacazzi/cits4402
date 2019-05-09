@@ -81,7 +81,7 @@ tbl = countEachLabel(imds);
 
 minSetCount = min(tbl{:,2}); 
 maxNumImages = 10;
-handles.numImagesPerClass = 5;
+handles.numImagesToTrain = 5;
 minSetCount = min(maxNumImages,minSetCount);
 
 % Use splitEachLabel method to trim the set.
@@ -103,7 +103,7 @@ handles.trainedSet = readTrainingSet(hObject, handles);
 yhats = zeros(prod(handles.downSample,length(handles.numClasses)));
 for i = 1 : handles.numClasses
     x = handles.trainedSet(:,i);
-    %yhats(:,i) = x*x\specific test image
+    %yhats(:,i) = x\specific test image
 end
 
 % --- Executes on button press in selectfolder.
@@ -120,34 +120,34 @@ function execute_Callback(hObject, eventdata, handles)
 
 function trainedSet = readTrainingSet(hObject, handles)
 %preallocate memory for 50x5x40 array
-trainedSet = zeros(prod(handles.downSample), handles.numImagesPerClass, handles.numClasses);
+trainedSet = zeros(prod(handles.downSample), handles.numImagesToTrain, handles.numClasses);
 
 %test = zeros(prod(handles.downSample), handles.testNum, length(classes));
-trainingIndexes = zeros(handles.numClasses);
+%trainingIndexes = zeros(handles.numClasses);
 
-for i = 1 : handles.numTrainingImages
-    [img,info] = readimage(handles.trainingSet,i);
-    class = info.Label;
+%for i = 1 : handles.numTrainingImages
+    %[img,info] = readimage(handles.trainingSet,i);
+    %class = info.Label;
    
     %classIndex = find(strcmp(handles.classes, class))
-    classIndex = strfind(handles.classes, class);
-    trainingIndexes(classIndex) = trainingIndexes(classIndex) + 1;
-    img = columniseImage(hObject, handles, img);
-    trainedSet(:, classIndex, trainingIndexes(classIndex)) = img;
-end
+    %classIndex = strfind(handles.classes, class);
+    %trainingIndexes(classIndex) = trainingIndexes(classIndex) + 1;
+    %img = columniseImage(hObject, handles, img);
+    %trainedSet(:, classIndex, trainingIndexes(classIndex)) = img;
+%end
 
-%z = 1
+k = 1;
 %For the 40 classes
-%for i = 1 : length(classes)
+for i = 1 : handles.numClasses
     %For the 5 images in each class
-    %for j = 1 : handles.trainNum
-        %Pass in zth image, increase 1 each run, as all training images are
+    for j = 1 : handles.numImagesToTrain
+        %Pass in kth image, increase 1 each run, as all training images are
         %together
-        %img = columniseImage(hObject, handles, readimage(train,z));
-        %train(:,j,i) = img;
-        %z = z + 1;
-    %end
-%end    
+        img = columniseImage(hObject, handles, readimage(handles.trainingSet, k));
+        trainedSet(:, j, i) = img;
+        k = k + 1;
+    end
+end    
     
 function img = columniseImage(hObject, handles, img)
 %If RGB, make greyscale
