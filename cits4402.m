@@ -103,7 +103,7 @@ handles.trainedSet = readTrainingSet(hObject, handles);
 yhats = zeros(prod(handles.downSample,length(handles.numClasses)));
 for i = 1 : handles.numClasses
     x = handles.trainedSet(:,i);
-    %yhats(:,i) = x\specific test image
+    %yhats(:,i) = x*x\specific test image
 end
 
 % --- Executes on button press in selectfolder.
