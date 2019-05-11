@@ -100,6 +100,7 @@ handles.numClasses = length(handles.classes);
 %Read in training images
 handles.trainedSet = readTrainingSet(hObject, handles); 
 
+handles.testColumns = readTestSet(hObject, handles);
 %for loop for each image
     [dist, predict] = distanceCalc(hObject, handles, y); 
     %check if prediction correct, update GUI etc
@@ -137,6 +138,23 @@ function execute_Callback(hObject, eventdata, handles)
 % hObject    handle to execute (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+function testColumns = readTestSet(hObject, handles)
+%preallocate memory for 50x5x40 array
+testColumns = zeros(prod(handles.downSample), handles.numImagesToTrain, handles.numClasses);
+
+k = 1;
+%For the 40 classes
+for i = 1 : handles.numClasses
+    %For the 5 images in each class
+    for j = 1 : handles.numImagesToTrain
+        %Pass in kth image, increase 1 each run, as all training images are
+        %together
+        img = columniseImage(hObject, handles, readimage(handles.testSet, k));
+        testColumns(:, j, i) = img;
+        k = k + 1;
+    end
+end
 
 function trainedSet = readTrainingSet(hObject, handles)
 %preallocate memory for 50x5x40 array
