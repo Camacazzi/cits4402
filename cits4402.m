@@ -100,11 +100,31 @@ handles.numClasses = length(handles.classes);
 %Read in training images
 handles.trainedSet = readTrainingSet(hObject, handles); 
 
-yhats = zeros(prod(handles.downSample,length(handles.numClasses)));
-for i = 1 : handles.numClasses
-    x = handles.trainedSet(:,i);
-    %yhats(:,i) = x\specific test image
-end
+%for loop for each image
+    [dist, predict] = distanceCalc(hObject, handles, y); 
+    %check if prediction correct, update GUI etc
+%end    
+
+%need to create outer for loop
+%yhats = zeros(prod(handles.downSample,length(handles.numClasses)));
+%for i = 1 : handles.numClasses
+%    x = handles.trainedSet(:,:,i);
+    %yhats(:,i) = x*(x\specific test image)    
+%end
+
+%for i = 1 : handles.numClasses
+    %x = handles.trainedSet(:,:,i);
+    %dists(i) = sum((img - x*(x\img)) .^ 2);
+%end
+%!!!!!OLD:
+%for the following, have another function call this code, that passes a
+%test image to it
+%then do distance calcs, for each image compare to all classes. Each
+%comparation to a class will produce a single number
+%for i = 1 : handles.numClasses
+    %dists(i) = sum((img-yhats(:,i).^2);
+%end
+%[dist,prediction] = min(dists)
 
 % --- Executes on button press in selectfolder.
 function selectfolder_Callback(hObject, eventdata, handles)
@@ -163,3 +183,11 @@ img = double(reshape(img, prod(handles.downSample), 1));
 
 %normalize
 img = img / max(img);
+
+function [dist, predict] = distanceCalc(hObject, handles, y)
+dist = zeros(length(handles.classes),1);
+for i = 1 : handles.numClasses
+    x = handles.trainedSet(:,:,i);
+    dist(i) = sum((y - x*(x\y)) .^ 2);
+end
+[dist,predict] = min(dist);
