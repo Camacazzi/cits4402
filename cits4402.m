@@ -22,7 +22,7 @@ function varargout = cits4402(varargin)
 
 % Edit the above text to modify the response to help cits4402
 
-% Last Modified by GUIDE v2.5 06-May-2019 14:48:38
+% Last Modified by GUIDE v2.5 12-May-2019 16:35:28
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -82,6 +82,7 @@ tbl = countEachLabel(imds);
 minSetCount = min(tbl{:,2}); 
 maxNumImages = 10;
 handles.numImagesToTrain = 5;
+handles.numImagesToTest = 5;
 minSetCount = min(maxNumImages,minSetCount);
 
 % Use splitEachLabel method to trim the set.
@@ -102,9 +103,32 @@ handles.trainedSet = readTrainingSet(hObject, handles);
 
 handles.testColumns = readTestSet(hObject, handles);
 %for loop for each image
-    [dist, predict] = distanceCalc(hObject, handles, y); 
-    %check if prediction correct, update GUI etc
-%end    
+k = 1;
+correct = 0;
+tested = 0;
+for i = 1 : length(handles.classes)
+    for j = 1 : handles.numImagesToTest
+        imshow(readimage(testSet,k), 'parent', handles.testimg);
+        [dist, index] = distanceCalc(hObject, handles, handles.testColumns(:,j,i)); 
+        [im,info] = readimage(handles.testSet,i);
+        %Weak code, assuming 10 img, evenly split. 
+        imshow(readimage(trainingSet,(index*5)-4), 'parent', handles.classimg);
+        if index == i
+            %hip hip hooray
+            set(handles.result, 'String', 'Correct');
+            correct = correct + 1;
+            tested = tested + 1;
+        else
+            set(handles.result, 'String', 'Incorrect');
+            tested = tested + 1;
+            pause(2);
+        end
+        
+        k = k + 1;
+        set(handles.amountcorrect, 'String', correct/tested);
+        pause(0.5);
+    end
+end    
 
 %need to create outer for loop
 %yhats = zeros(prod(handles.downSample,length(handles.numClasses)));
@@ -202,10 +226,10 @@ img = double(reshape(img, prod(handles.downSample), 1));
 %normalize
 img = img / max(img);
 
-function [dist, predict] = distanceCalc(hObject, handles, y)
+function [dist, index] = distanceCalc(hObject, handles, y)
 dist = zeros(length(handles.classes),1);
 for i = 1 : handles.numClasses
     x = handles.trainedSet(:,:,i);
     dist(i) = sum((y - x*(x\y)) .^ 2);
 end
-[dist,predict] = min(dist);
+[dist,index] = min(dist);
