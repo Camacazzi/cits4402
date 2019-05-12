@@ -22,7 +22,7 @@ function varargout = cits4402(varargin)
 
 % Edit the above text to modify the response to help cits4402
 
-% Last Modified by GUIDE v2.5 12-May-2019 16:35:28
+% Last Modified by GUIDE v2.5 12-May-2019 20:46:58
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -45,191 +45,135 @@ end
 
 % --- Executes just before cits4402 is made visible.
 function cits4402_OpeningFcn(hObject, eventdata, handles, varargin)
-% This function has no output args, see OutputFcn.
-% hObject    handle to figure
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to cits4402 (see VARARGIN)
+    % This function has no output args, see OutputFcn.
+    % hObject    handle to figure
+    % eventdata  reserved - to be defined in a future version of MATLAB
+    % handles    structure with handles and user data (see GUIDATA)
+    % varargin   command line arguments to cits4402 (see VARARGIN)
 
-% Choose default command line output for cits4402
-handles.output = hObject;
+    % Choose default command line output for cits4402
+    handles.output = hObject;
 
-% Update handles structure
-guidata(hObject, handles);
-
+    % Update handles structure
+    guidata(hObject, handles);
+    
 % UIWAIT makes cits4402 wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
 % --- Outputs from this function are returned to the command line.
 function varargout = cits4402_OutputFcn(hObject, eventdata, handles) 
-% varargout  cell array for returning output args (see VARARGOUT);
-% hObject    handle to figure
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+    % Get default command line output from handles structure.
+    varargout{1} = handles.output;
 
-% Get default command line output from handles structure
-varargout{1} = handles.output;
+    handles.downSample = [10 5];
+    handles.maxNumImages = 10;
+    handles.numImagesToProcess = 5;
 
-handles.downSample = [10 5];
-%handles.images = 10;
-%handles.trainNum = 5;
-%handles.testNum = 5;
-
-imds = imageDatastore(uigetdir(), 'includesubfolders',true,'LabelSource','foldernames');
-
-tbl = countEachLabel(imds);
-
-minSetCount = min(tbl{:,2}); 
-maxNumImages = 10;
-handles.numImagesToTrain = 5;
-handles.numImagesToTest = 5;
-minSetCount = min(maxNumImages,minSetCount);
-
-% Use splitEachLabel method to trim the set.
-imds = splitEachLabel(imds, minSetCount, 'randomize');
-
-[trainingSet, testSet] = splitEachLabel(imds, 0.5, 'randomize');
-handles.trainingSet = trainingSet;
-handles.testSet = testSet;
-handles.classes = unique(imds.Labels);
-
-handles.numImages = length(imds.Files);
-handles.numTrainingImages = length(trainingSet.Files);
-handles.numTestImages = length(testSet.Files);
-handles.numClasses = length(handles.classes);
-
-%Read in training images
-handles.trainedSet = readTrainingSet(hObject, handles); 
-
-handles.testColumns = readTestSet(hObject, handles);
-%for loop for each image
-k = 1;
-correct = 0;
-tested = 0;
-for i = 1 : length(handles.classes)
-    for j = 1 : handles.numImagesToTest
-        imshow(readimage(testSet,k), 'parent', handles.testimg);
-        [dist, index] = distanceCalc(hObject, handles, handles.testColumns(:,j,i)); 
-        [im,info] = readimage(handles.testSet,i);
-        %Weak code, assuming 10 img, evenly split. 
-        imshow(readimage(trainingSet,(index*5)-4), 'parent', handles.classimg);
-        if index == i
-            %hip hip hooray
-            set(handles.result, 'String', 'Correct');
-            correct = correct + 1;
-            tested = tested + 1;
-        else
-            set(handles.result, 'String', 'Incorrect');
-            tested = tested + 1;
-            pause(2);
-        end
-        
-        k = k + 1;
-        set(handles.amountcorrect, 'String', correct/tested);
-        pause(0.5);
-    end
-end    
-
-%need to create outer for loop
-%yhats = zeros(prod(handles.downSample,length(handles.numClasses)));
-%for i = 1 : handles.numClasses
-%    x = handles.trainedSet(:,:,i);
-    %yhats(:,i) = x*(x\specific test image)    
-%end
-
-%for i = 1 : handles.numClasses
-    %x = handles.trainedSet(:,:,i);
-    %dists(i) = sum((img - x*(x\img)) .^ 2);
-%end
-%!!!!!OLD:
-%for the following, have another function call this code, that passes a
-%test image to it
-%then do distance calcs, for each image compare to all classes. Each
-%comparation to a class will produce a single number
-%for i = 1 : handles.numClasses
-    %dists(i) = sum((img-yhats(:,i).^2);
-%end
-%[dist,prediction] = min(dists)
-
-% --- Executes on button press in selectfolder.
-function selectfolder_Callback(hObject, eventdata, handles)
-% hObject    handle to selectfolder (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% --- Executes on button press in execute.
-function execute_Callback(hObject, eventdata, handles)
-% hObject    handle to execute (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-function testColumns = readTestSet(hObject, handles)
-%preallocate memory for 50x5x40 array
-testColumns = zeros(prod(handles.downSample), handles.numImagesToTrain, handles.numClasses);
-
-k = 1;
-%For the 40 classes
-for i = 1 : handles.numClasses
-    %For the 5 images in each class
-    for j = 1 : handles.numImagesToTrain
-        %Pass in kth image, increase 1 each run, as all training images are
-        %together
-        img = columniseImage(hObject, handles, readimage(handles.testSet, k));
-        testColumns(:, j, i) = img;
-        k = k + 1;
-    end
-end
-
-function trainedSet = readTrainingSet(hObject, handles)
-%preallocate memory for 50x5x40 array
-trainedSet = zeros(prod(handles.downSample), handles.numImagesToTrain, handles.numClasses);
-
-%test = zeros(prod(handles.downSample), handles.testNum, length(classes));
-%trainingIndexes = zeros(handles.numClasses);
-
-%for i = 1 : handles.numTrainingImages
-    %[img,info] = readimage(handles.trainingSet,i);
-    %class = info.Label;
-   
-    %classIndex = find(strcmp(handles.classes, class))
-    %classIndex = strfind(handles.classes, class);
-    %trainingIndexes(classIndex) = trainingIndexes(classIndex) + 1;
-    %img = columniseImage(hObject, handles, img);
-    %trainedSet(:, classIndex, trainingIndexes(classIndex)) = img;
-%end
-
-k = 1;
-%For the 40 classes
-for i = 1 : handles.numClasses
-    %For the 5 images in each class
-    for j = 1 : handles.numImagesToTrain
-        %Pass in kth image, increase 1 each run, as all training images are
-        %together
-        img = columniseImage(hObject, handles, readimage(handles.trainingSet, k));
-        trainedSet(:, j, i) = img;
-        k = k + 1;
-    end
-end    
+    handles.imds = imageDatastore(uigetdir(), 'includesubfolders',true,'LabelSource','foldernames');
+    processFolder(hObject, handles.imds, handles);
     
-function img = columniseImage(hObject, handles, img)
-%If RGB, make greyscale
-if ndims(img) == 3
-    img = rgb2gray(img);
-end
+    guidata(hObject, handles);
 
-%Resize to 10x5
-img = imresize(img, handles.downSample);
+% --- Executes on button press in btnRun.
+function btnRun_Callback(hObject, eventdata, handles)
+    % Use splitEachLabel function to separate the test/training sets
+    [handles.trainingSet, handles.testSet] = splitEachLabel(handles.imds, 0.5, 'randomize');
+    handles.classes = unique(handles.imds.Labels);
 
-%Reshape to column
-img = double(reshape(img, prod(handles.downSample), 1));
+    handles.numImages = length(handles.imds.Files);
+    handles.numTrainingImages = length(handles.trainingSet.Files);
+    handles.numTestImages = length(handles.testSet.Files);
+    handles.numClasses = length(handles.classes);
+    
+    %Read in training images
+    handles.trainingColumns = processImageSet(handles.trainingSet, handles); 
 
-%normalize
-img = img / max(img);
+    handles.testColumns = processImageSet(handles.testSet, handles);
+    
+    %for loop for each image
+    k = 1;
+    correct = 0;
+    tested = 0;
+    for i = 1 : handles.numClasses
+        for j = 1 : handles.numImagesToProcess
+            imshow(readimage(handles.testSet,k), 'parent', handles.imgTest);
+            [dist, index] = distanceCalc(handles, handles.testColumns(:,j,i)); 
+            %[im,info] = readimage(handles.testSet,i);
+            %Weak code, assuming 10 img, evenly split. 
+            imshow(readimage(handles.trainingSet,(index*5)-4), 'parent', handles.imgClass);
+            if index == i
+                %hip hip hooray
+                set(handles.lblResult, 'String', 'Correct');
+                set(handles.lblResult, 'ForegroundColor', 'green');
+                correct = correct + 1;
+                tested = tested + 1;
+            else
+                set(handles.lblResult, 'String', 'Incorrect');
+                set(handles.lblResult, 'ForegroundColor', 'red');
+                tested = tested + 1;
+                pause(2);
+            end
 
-function [dist, index] = distanceCalc(hObject, handles, y)
-dist = zeros(length(handles.classes),1);
-for i = 1 : handles.numClasses
-    x = handles.trainedSet(:,:,i);
-    dist(i) = sum((y - x*(x\y)) .^ 2);
-end
-[dist,index] = min(dist);
+            k = k + 1;
+            set(handles.lblAccuracy, 'String', strcat('Accuracy: ', num2str(correct/tested, 4)));
+            pause(0.5);
+        end
+    end
+
+ function columns = processImageSet(imageSet, handles)
+    % Preallocate memory for 50x5x40 array
+    columns = zeros(prod(handles.downSample), handles.numImagesToProcess, handles.numClasses);
+    
+    k = 1;
+    %For the 40 classes
+    for i = 1 : handles.numClasses
+        %For the 5 images in each class
+        for j = 1 : handles.numImagesToProcess
+            %Pass in kth image, increase 1 each run, as all training images are
+            %together
+            img = columniseImage(handles, readimage(imageSet, k));
+            columns(:, j, i) = img;
+            k = k + 1;
+        end
+    end   
+    
+function img = columniseImage(handles, img)
+    %If RGB, make greyscale
+    if ndims(img) == 3
+        img = rgb2gray(img);
+    end
+
+    % Resize to 10x5
+    img = imresize(img, handles.downSample);
+
+    % Reshape to column.
+    img = double(reshape(img, prod(handles.downSample), 1));
+
+    % Normalize
+    img = img / max(img);
+
+function [dist, index] = distanceCalc(handles, y)
+    dist = zeros(length(handles.classes),1);
+    for i = 1 : handles.numClasses
+        x = handles.trainingColumns(:,:,i);
+        dist(i) = sum((y - x*(x\y)) .^ 2);
+    end
+    [dist,index] = min(dist);
+    
+function processFolder(hObject, imds, handles)
+    tbl = countEachLabel(imds);
+
+    minSetCount = min(tbl{:,2}); 
+    
+    minSetCount = min(handles.maxNumImages, minSetCount);
+
+    % Use splitEachLabel function to trim the set.
+    handles.imds = splitEachLabel(imds, minSetCount, 'randomize');
+    
+    % Save handles
+    guidata(hObject, handles);
+    
+% --- Executes on button press in btnLoad.
+function btnLoad_Callback(hObject, eventdata, handles)
+    imds = imageDatastore(uigetdir(), 'includesubfolders',true,'LabelSource','foldernames');
+    processFolder(hObject, imds, handles);
