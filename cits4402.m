@@ -88,34 +88,40 @@ function btnRun_Callback(hObject, eventdata, handles)
     %Read in training images
     handles.trainingColumns = processImageSet(handles.trainingSet, handles); 
 
-    handles.testColumns = processImageSet(handles.testSet, handles);
+    %handles.testColumns = processImageSet(handles.testSet, handles);
     
     %for loop for each image
     k = 1;
     correct = 0;
-    tested = 0;
+    %tested = 0;
     for i = 1 : handles.numClasses
         for j = 1 : handles.numImagesToProcess
-            imshow(readimage(handles.testSet,k), 'parent', handles.imgTest);
-            [dist, index] = distanceCalc(handles, handles.testColumns(:,j,i)); 
-            %[im,info] = readimage(handles.testSet,i);
+            [img, info] = readimage(handles.testSet, k);
+            imshow(img, 'parent', handles.imgTest);
+            set(handles.lblTestClass, 'String', strcat('Class: ', string(info.Label)));
+            
+            [dist, index] = distanceCalc(handles, columniseImage(handles, img)); 
+  
             %Weak code, assuming 10 img, evenly split. 
-            imshow(readimage(handles.trainingSet,(index*5)-4), 'parent', handles.imgClass);
+            [predictedImg, predictedInfo] = readimage(handles.trainingSet,(index*5)-4);
+            imshow(predictedImg, 'parent', handles.imgClass);
+            set(handles.lblTrainingClass, 'String', strcat('Class: ', string(predictedInfo.Label)));
+            
             if index == i
                 %hip hip hooray
                 set(handles.lblResult, 'String', 'Correct');
                 set(handles.lblResult, 'ForegroundColor', 'green');
                 correct = correct + 1;
-                tested = tested + 1;
+                %tested = tested + 1;
             else
                 set(handles.lblResult, 'String', 'Incorrect');
                 set(handles.lblResult, 'ForegroundColor', 'red');
-                tested = tested + 1;
+                %tested = tested + 1;
                 pause(2);
             end
 
             k = k + 1;
-            set(handles.lblAccuracy, 'String', strcat('Accuracy: ', num2str(correct/tested, 4)));
+            set(handles.lblAccuracy, 'String', strcat('Accuracy: ', num2str(correct/(k-1), 4)));
             pause(0.5);
         end
     end
