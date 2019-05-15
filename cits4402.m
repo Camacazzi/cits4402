@@ -153,7 +153,7 @@ function img = columniseImage(handles, img)
     img = imresize(img, handles.downSample);
 
     % Reshape to column.
-    img = double(reshape(img, prod(handles.downSample), 1));
+    img = double(img(:));
 
     % Normalize
     img = img / max(img);
